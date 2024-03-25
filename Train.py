@@ -2,21 +2,20 @@ from itertools import count
 
 import torch
 import gymnasium as gym
-from matplotlib import pyplot as plt
 from tqdm import tqdm
-import numpy as np
+import wandb
 
 from Agent import Agent
 from config import cartpole_hyperparameters
 
 
-def train(print_every):
+def train():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     env = gym.make(cartpole_hyperparameters["env_id"])
     agent = Agent(cartpole_hyperparameters, device)
 
-    scores = []
+    wandb.watch(agent.policy_net, log="all")
     for episode in tqdm(range(cartpole_hyperparameters["n_training_episodes"])):
         saved_log_probs = []
         rewards = []
@@ -31,18 +30,25 @@ def train(print_every):
             if terminated or truncated:
                 break
 
-        agent.optimize_model(saved_log_probs, rewards)
-        scores.append(sum(rewards))
+        loss = agent.optimize_model(saved_log_probs, rewards)
+        score = sum(rewards)
+        wandb.log({
+            'loss': loss,
+            'score': score
+        })
 
-        if episode % print_every == 0:
-            print(f'Episode {episode}\t Average Score: {np.mean(scores)}')
-
-    return scores
+    agent.save_policy_net("models", "REINFORCE_CartPole.pt")
 
 
 if __name__ == '__main__':
-    scores = train(100)
-    plt.plot(scores)
-    plt.xlabel('Episodes')
-    plt.ylabel('Score')
-    plt.show()
+    run = wandb.init(
+        project="REINFORCE_CartPole",
+        config=cartpole_hyperparameters
+    )
+
+    train()
+    run.log_model(
+        path=cartpole_hyperparameters["model_path"],
+        name="REINFORCE_CartPole"
+)
+    run.finish()

@@ -1,3 +1,4 @@
+import os
 from collections import deque
 
 import torch
@@ -9,7 +10,6 @@ from REINFORCE import REINFORCE
 
 class Agent:
     def __init__(self, config, device):
-        self.BATCH_SIZE = config["batch_size"]
         self.GAMMA = config["discount_rate"]
 
         self.env = config["env_id"]
@@ -37,12 +37,14 @@ class Agent:
             policy_loss.append(-log_prob * discounted_return)
         loss = torch.cat(policy_loss).sum()
 
-        # print(f'Saved Log Probability: {[slp.item() for slp in saved_log_probs]}')
-        # print(f'Returns: {returns}')
-        # print(f'Policy Loss: {[pl.item() for pl in policy_loss]}')
-        # print(f'Loss: {loss}')
-        # print('----------------------------------------------------------')
-
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        return loss.item()
+
+    def save_policy_net(self, directory, model_name):
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        path = os.path.join(directory, model_name)
+        torch.save(self.policy_net.state_dict(), path)

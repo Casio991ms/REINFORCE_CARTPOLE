@@ -1,5 +1,6 @@
 from itertools import count
 
+import numpy as np
 import torch
 import gymnasium as gym
 from tqdm import tqdm
@@ -37,6 +38,7 @@ def train():
             'score': score
         })
 
+    env.close()
     agent.save_policy_net("models", "REINFORCE_CartPole.pt")
 
 
@@ -47,8 +49,9 @@ if __name__ == '__main__':
     )
 
     train()
+
     run.log_model(
-        path=cartpole_hyperparameters["model_path"],
+        path="models/REINFORCE_CartPole.pt",
         name="REINFORCE_CartPole"
-)
+    )
     run.finish()

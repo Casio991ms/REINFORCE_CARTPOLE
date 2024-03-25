@@ -48,3 +48,7 @@ class Agent:
             os.makedirs(directory)
         path = os.path.join(directory, model_name)
         torch.save(self.policy_net.state_dict(), path)
+
+    def load_policy_net(self, directory, model_name):
+        path = os.path.join(directory, model_name)
+        self.policy_net.load_state_dict(torch.load(path))
